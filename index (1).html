@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CloudCare AI</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#f0f5ff; --surface:#ffffff; --surface2:#f5f8ff;
+  --border:#e0e8f8; --border2:#c8d8f5;
+  --blue:#2563eb; --blue2:#1d4ed8; --blue-lt:#dbeafe;
+  --sky:#0ea5e9; --sky-lt:#e0f2fe;
+  --green:#059669; --green2:#047857; --green-lt:#d1fae5;
+  --red:#dc2626; --red-lt:#fee2e2;
+  --orange:#d97706; --orange-lt:#fef3c7;
+  --purple:#7c3aed; --purple-lt:#ede9fe;
+  --text:#0f172a; --text2:#475569; --text3:#94a3b8;
+  --shadow:0 8px 40px rgba(37,99,235,0.12);
+  --ff:'Outfit',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--ff);background:var(--bg);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px;background-image:radial-gradient(ellipse 70% 50% at 0% 0%,rgba(37,99,235,0.07) 0%,transparent 60%),radial-gradient(ellipse 60% 60% at 100% 100%,rgba(5,150,105,0.06) 0%,transparent 60%)}
+.wrap{width:100%;max-width:460px;border-radius:28px;overflow:hidden;background:var(--surface);border:1px solid var(--border);box-shadow:var(--shadow);display:flex;flex-direction:column;position:relative}
+/* HEADER */
+.hdr{background:linear-gradient(135deg,#1e40af 0%,#2563eb 55%,#0ea5e9 100%);padding:18px 20px 16px;color:white;position:relative;overflow:hidden}
+.hdr::before{content:'';position:absolute;top:-40px;right:-40px;width:140px;height:140px;border-radius:50%;background:rgba(255,255,255,0.07)}
+.hdr::after{content:'';position:absolute;bottom:-30px;left:20%;width:100px;height:100px;border-radius:50%;background:rgba(5,150,105,0.15)}
+.hdr-inner{display:flex;align-items:center;gap:14px;position:relative;z-index:1}
+.avatar{width:48px;height:48px;border-radius:16px;flex-shrink:0;background:rgba(255,255,255,0.18);border:1.5px solid rgba(255,255,255,0.3);display:flex;align-items:center;justify-content:center;font-size:22px}
+.hdr-info h1{font-size:1.05rem;font-weight:800;letter-spacing:-0.02em}
+.hdr-info .sub{font-size:0.7rem;opacity:0.78;margin-top:2px;font-weight:400}
+.hdr-badges{margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:4px;position:relative;z-index:1}
+.hbadge{font-size:0.62rem;font-weight:600;background:rgba(255,255,255,0.18);border:1px solid rgba(255,255,255,0.28);border-radius:20px;padding:2px 9px;display:flex;align-items:center;gap:4px;backdrop-filter:blur(4px)}
+.dot{width:5px;height:5px;border-radius:50%;background:#4ade80;animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.35}}
+/* TABS */
+.tabs{display:flex;background:var(--surface2);border-bottom:1px solid var(--border);padding:10px 12px 0;gap:5px}
+.tab{flex:1;padding:8px 4px;border:none;background:transparent;font-family:var(--ff);font-size:0.71rem;font-weight:600;color:var(--text3);cursor:pointer;border-radius:10px 10px 0 0;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:4px;border-bottom:2.5px solid transparent}
+.tab:hover:not(.active){color:var(--text2);background:rgba(37,99,235,0.04)}
+.tab.active{color:var(--blue);background:white;border-bottom-color:var(--blue)}
+.tab.active.htab{color:var(--green);border-bottom-color:var(--green)}
+.tab.active.stab{color:var(--sky);border-bottom-color:var(--sky)}
+/* PATIENT STRIP */
+.pt-strip{display:none;padding:8px 16px;background:linear-gradient(90deg,rgba(5,150,105,0.05),rgba(37,99,235,0.04));border-bottom:1px solid var(--border);flex-wrap:wrap;gap:6px;align-items:center}
+.pt-strip.show{display:flex}
+.pt-chip{font-size:0.64rem;font-weight:600;background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:3px 9px;color:var(--text2);display:flex;align-items:center;gap:4px}
+.pt-chip em{color:var(--blue);font-style:normal}
+/* STEP PROGRESS */
+.progress-bar{display:none;padding:8px 16px;background:var(--surface2);border-bottom:1px solid var(--border);align-items:center;justify-content:space-between}
+.progress-bar.show{display:flex}
+.prog-label{font-size:0.68rem;font-weight:700;color:var(--green)}
+.prog-dots{display:flex;gap:5px}
+.prog-dot{width:22px;height:4px;border-radius:2px;background:var(--border);transition:background 0.3s}
+.prog-dot.done{background:var(--green)}
+.prog-dot.active{background:rgba(5,150,105,0.45)}
+/* DISEASE OVERLAY */
+.disease-overlay{position:absolute;inset:0;background:rgba(240,245,255,0.97);backdrop-filter:blur(8px);z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:22px 18px;gap:16px;animation:fadeIn 0.3s ease}
+.disease-overlay.gone{display:none}
+@keyframes fadeIn{from{opacity:0;transform:scale(0.98)}to{opacity:1;transform:scale(1)}}
+.ov-head{text-align:center}
+.ov-head h2{font-size:1.1rem;font-weight:800;color:var(--text);letter-spacing:-0.02em}
+.ov-head h2 span{color:var(--blue)}
+.ov-head p{font-size:0.74rem;color:var(--text2);margin-top:6px;line-height:1.5}
+.d-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;width:100%}
+.d-card{background:var(--surface2);border:1.5px solid var(--border);border-radius:18px;padding:14px 10px;display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer;transition:all 0.22s;text-align:center}
+.d-card:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,0.1)}
+.d-card.c1:hover{border-color:#f97316;background:#fff7ed}
+.d-card.c2:hover{border-color:#0ea5e9;background:#f0f9ff}
+.d-card.c3:hover{border-color:#60a5fa;background:#eff6ff}
+.d-card.c4:hover{border-color:#8b5cf6;background:#f5f3ff}
+.d-card.c5:hover{border-color:#10b981;background:#f0fdf4}
+.d-card.c6:hover{border-color:#f43f5e;background:#fff1f2}
+.d-icon{font-size:2rem}
+.d-name{font-size:0.74rem;font-weight:700;color:var(--text)}
+.d-sub{font-size:0.61rem;color:var(--text3);line-height:1.3}
+.ov-skip{font-family:var(--ff);font-size:0.73rem;font-weight:600;background:var(--blue-lt);border:1.5px solid var(--border2);border-radius:20px;padding:8px 22px;color:var(--blue);cursor:pointer;transition:all 0.18s}
+.ov-skip:hover{background:var(--blue);color:white}
+.ov-note{font-size:0.64rem;color:var(--text3);text-align:center;max-width:300px;line-height:1.5}
+/* MESSAGES */
+.msgs{flex:1;min-height:340px;max-height:390px;overflow-y:auto;padding:16px 14px;display:flex;flex-direction:column;gap:10px;scroll-behavior:smooth}
+.msgs::-webkit-scrollbar{width:3px}
+.msgs::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+.msg{display:flex;flex-direction:column;max-width:84%;animation:popUp 0.25s ease}
+@keyframes popUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.msg.bot{align-self:flex-start}
+.msg.user{align-self:flex-end}
+.bbl{padding:11px 14px;border-radius:18px;font-size:0.83rem;line-height:1.58;word-break:break-word}
+.msg.bot .bbl{background:var(--surface2);color:var(--text);border:1px solid var(--border);border-bottom-left-radius:4px}
+.msg.user .bbl{background:linear-gradient(135deg,var(--blue) 0%,#3b82f6 100%);color:white;border-bottom-right-radius:4px;font-weight:500}
+.msg.bot.health .bbl{background:var(--green-lt);border-color:rgba(5,150,105,0.3);border-left:3px solid var(--green)}
+.msg.bot.result .bbl{background:var(--blue-lt);border-color:rgba(37,99,235,0.25);border-left:3px solid var(--blue)}
+.msg.bot.medicine .bbl{background:var(--purple-lt);border-color:rgba(124,58,237,0.25);border-left:3px solid var(--purple)}
+.msg.bot.warn .bbl{background:var(--orange-lt);border-color:rgba(217,119,6,0.3);border-left:3px solid var(--orange)}
+.msg.bot.system .bbl{background:linear-gradient(135deg,var(--blue-lt),var(--green-lt));border-color:var(--border2)}
+.bbl strong{font-weight:700}
+.bbl ul{padding-left:18px;margin:6px 0}
+.bbl li{margin-bottom:4px;font-size:0.8rem}
+.mtime{font-size:0.6rem;color:var(--text3);margin-top:3px;padding:0 3px}
+.msg.user .mtime{text-align:right}
+/* TYPING */
+.typing{display:none;align-self:flex-start}
+.typing.on{display:flex}
+.t-inner{padding:12px 16px;background:var(--surface2);border:1px solid var(--border);border-radius:18px;border-bottom-left-radius:4px;display:flex;gap:5px;align-items:center}
+.td{width:7px;height:7px;border-radius:50%;background:var(--text3);animation:tdb 1.1s infinite}
+.td:nth-child(2){animation-delay:.2s}.td:nth-child(3){animation-delay:.4s}
+@keyframes tdb{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
+/* QUICK ACTIONS */
+.qas{padding:10px 12px;border-top:1px solid var(--border);background:var(--surface2);display:flex;gap:7px;flex-wrap:wrap}
+.qa{font-family:var(--ff);font-size:0.7rem;font-weight:600;padding:6px 13px;border-radius:20px;border:1.5px solid var(--border);background:white;color:var(--text2);cursor:pointer;transition:all 0.18s;display:flex;align-items:center;gap:5px}
+.qa:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-lt);transform:translateY(-1px)}
+.qa.g:hover{border-color:var(--green);color:var(--green);background:var(--green-lt)}
+.qa.r:hover{border-color:var(--red);color:var(--red);background:var(--red-lt)}
+/* YES/NO */
+.choice-row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.cho{font-family:var(--ff);font-size:0.75rem;font-weight:600;padding:7px 18px;border-radius:20px;border:1.5px solid var(--border);background:var(--surface);color:var(--text2);cursor:pointer;transition:all 0.18s}
+.cho.y:hover{border-color:var(--green);color:var(--green);background:var(--green-lt)}
+.cho.n:hover{border-color:var(--red);color:var(--red);background:var(--red-lt)}
+/* BOTTOM ACTIONS */
+.bot-actions{padding:10px 12px;border-top:1px solid var(--border);background:var(--surface2);display:none;flex-wrap:wrap;gap:7px}
+.bot-actions.show{display:flex}
+.ba-btn{font-family:var(--ff);font-size:0.72rem;font-weight:600;padding:8px 16px;border-radius:20px;border:1.5px solid var(--border);background:white;color:var(--text2);cursor:pointer;transition:all 0.18s}
+.ba-btn:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-lt);transform:translateY(-1px)}
+.ba-btn.prime{background:linear-gradient(135deg,var(--green),var(--green2));border-color:transparent;color:white}
+.ba-btn.prime:hover{box-shadow:0 4px 16px rgba(5,150,105,0.35);transform:translateY(-1px)}
+/* INPUT */
+.inp-area{padding:12px 14px 14px;background:white;border-top:1px solid var(--border);display:flex;gap:8px;align-items:flex-end}
+.inp-wrap{flex:1;position:relative;display:flex;align-items:center}
+#userInput{width:100%;padding:11px 46px 11px 16px;border:1.5px solid var(--border);border-radius:26px;font-family:var(--ff);font-size:0.83rem;color:var(--text);background:var(--surface2);outline:none;resize:none;transition:border-color 0.2s,box-shadow 0.2s;line-height:1.4}
+#userInput:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,0.1);background:white}
+#userInput::placeholder{color:var(--text3)}
+#userInput:disabled{opacity:0.45;cursor:not-allowed}
+.send{position:absolute;right:7px;bottom:7px;width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--sky));border:none;cursor:pointer;color:white;display:flex;align-items:center;justify-content:center;transition:all 0.2s}
+.send:hover{transform:scale(1.1);box-shadow:0 4px 12px rgba(37,99,235,0.35)}
+.send:disabled{background:var(--border);cursor:not-allowed;transform:none;box-shadow:none}
+.send svg{width:13px;height:13px}
+/* FOOTER */
+.ftr{padding:8px 16px 10px;background:white;border-top:1px solid var(--border);font-size:0.62rem;color:var(--text3);display:flex;align-items:center;justify-content:center;gap:6px}
+@media(max-width:480px){body{padding:0;align-items:flex-start}.wrap{border-radius:0;min-height:100dvh}.msgs{max-height:100%}.d-grid{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<div class="wrap" id="app">
+
+  <div class="hdr">
+    <div class="hdr-inner">
+      <div class="avatar">🏥</div>
+      <div class="hdr-info">
+        <h1>CloudCare AI</h1>
+        <div class="sub">Health Assistant &amp; Customer Support</div>
+      </div>
+      <div class="hdr-badges">
+        <div class="hbadge"><span class="dot"></span> Online</div>
+        <div class="hbadge">⚡ &lt;2s</div>
+        <div class="hbadge">🔒 Encrypted</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tabs" id="tabBar">
+    <button class="tab active" id="tab-all"     onclick="switchTab('all')">🌐 All</button>
+    <button class="tab htab"   id="tab-health"  onclick="switchTab('health')">🩺 Health</button>
+    <button class="tab stab"   id="tab-support" onclick="switchTab('support')">🛒 Support</button>
+  </div>
+
+  <div class="disease-overlay" id="diseaseOverlay">
+    <div class="ov-head">
+      <h2>👋 Welcome to <span>CloudCare AI</span></h2>
+      <p>Select a health condition to begin guided diagnosis,<br>or skip to the general chat assistant.</p>
+    </div>
+    <div class="d-grid">
+      <div class="d-card c1" onclick="pickDisease('Fever','🌡️')">
+        <div class="d-icon">🌡️</div><div class="d-name">Fever</div><div class="d-sub">High temp, body ache</div>
+      </div>
+      <div class="d-card c2" onclick="pickDisease('Cough','😮‍💨')">
+        <div class="d-icon">😮‍💨</div><div class="d-name">Cough</div><div class="d-sub">Dry or wet cough</div>
+      </div>
+      <div class="d-card c3" onclick="pickDisease('Nose Cold','🤧')">
+        <div class="d-icon">🤧</div><div class="d-name">Nose Cold</div><div class="d-sub">Runny / blocked nose</div>
+      </div>
+      <div class="d-card c4" onclick="pickDisease('Headache','🤕')">
+        <div class="d-icon">🤕</div><div class="d-name">Headache</div><div class="d-sub">Migraine, tension pain</div>
+      </div>
+      <div class="d-card c5" onclick="pickDisease('Malaria','🦟')">
+        <div class="d-icon">🦟</div><div class="d-name">Malaria</div><div class="d-sub">Mosquito-borne fever</div>
+      </div>
+      <div class="d-card c6" onclick="pickDisease('Cancer','🎗️')">
+        <div class="d-icon">🎗️</div><div class="d-name">Cancer</div><div class="d-sub">Early signs &amp; info</div>
+      </div>
+    </div>
+    <button class="ov-skip" onclick="skipToChat()">💬 Skip — Go to General Chat</button>
+    <div class="ov-note">⚠️ For educational guidance only. Always consult a qualified doctor.</div>
+  </div>
+
+  <div class="pt-strip" id="ptStrip"></div>
+  <div class="progress-bar" id="progBar">
+    <div class="prog-label" id="progLabel">Step 1 of 5</div>
+    <div class="prog-dots" id="progDots"></div>
+  </div>
+
+  <div class="msgs" id="msgs">
+    <div class="typing" id="typing">
+      <div class="t-inner"><div class="td"></div><div class="td"></div><div class="td"></div></div>
+    </div>
+  </div>
+
+  <div class="qas" id="qa-all">
+    <button class="qa g" onclick="ask('What are symptoms of fever?')">🌡️ Fever</button>
+    <button class="qa g" onclick="ask('Tips to manage a bad cough')">😮‍💨 Cough</button>
+    <button class="qa g" onclick="ask('How to relieve a bad headache?')">🤕 Headache</button>
+    <button class="qa"   onclick="ask('Track my order')">📦 Track Order</button>
+    <button class="qa"   onclick="ask('I need a refund')">💳 Refund</button>
+    <button class="qa r" onclick="ask('What to do in a medical emergency?')">🚨 Emergency</button>
+  </div>
+  <div class="qas" id="qa-health" style="display:none">
+    <button class="qa g" onclick="ask('What are symptoms of malaria?')">🦟 Malaria</button>
+    <button class="qa g" onclick="ask('How to lower blood pressure naturally?')">❤️ BP</button>
+    <button class="qa g" onclick="ask('Best foods for immunity boost')">🥗 Immunity</button>
+    <button class="qa g" onclick="ask('Signs of dehydration')">💧 Dehydration</button>
+    <button class="qa g" onclick="ask('Tips to improve sleep quality')">😴 Sleep</button>
+    <button class="qa g" onclick="ask('What vaccines should adults get in India?')">💉 Vaccines</button>
+  </div>
+  <div class="qas" id="qa-support" style="display:none">
+    <button class="qa" onclick="ask('Track my order')">📦 Track Order</button>
+    <button class="qa" onclick="ask('I want to reset my password')">🔑 Reset Password</button>
+    <button class="qa" onclick="ask('I need a refund for my order')">💳 Refund</button>
+    <button class="qa" onclick="ask('Connect me to a live agent')">🎧 Live Agent</button>
+    <button class="qa" onclick="ask('I have a billing issue')">💰 Billing</button>
+    <button class="qa" onclick="ask('Technical support help')">🔧 Tech Support</button>
+  </div>
+
+  <div class="bot-actions" id="botActions"></div>
+
+  <div class="inp-area">
+    <div class="inp-wrap">
+      <textarea id="userInput" rows="1"
+        placeholder="Ask about health, symptoms, orders, billing…"
+        onkeydown="handleKey(event)" oninput="autoGrow(this)" disabled></textarea>
+      <button class="send" id="sendBtn" onclick="sendMsg()" disabled>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="22" y1="2" x2="11" y2="13"/>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="ftr">
+    <span>⚕️ Health info is educational only</span><span>•</span>
+    <span>🔒 Powered by CloudCare AI</span><span>•</span>
+    <span>AWS Deployed</span>
+  </div>
+
+</div>
+
+<script>
+/* ── STATE ── */
+let patient = { name:'', age:'', height:'', weight:'', symptoms:'', disease:'', icon:'' };
+let convHistory = [];
+let mode = 'overlay';
+let formStep = 0;
+
+/* ══════════════════════════════════════
+   PASTE YOUR API KEY HERE (between the quotes)
+══════════════════════════════════════ */
+const API_KEY = 'PASTE_YOUR_NEW_API_KEY_HERE';
+
+const STEPS = [
+  { f:'name',     q:"👤 What is the patient's <strong>full name</strong>?",             ph:"e.g. Priya Sharma" },
+  { f:'age',      q:"🎂 What is the patient's <strong>age</strong> (in years)?",         ph:"e.g. 34" },
+  { f:'height',   q:"📏 What is the patient's <strong>height</strong>?",                 ph:"e.g. 162 cm" },
+  { f:'weight',   q:"⚖️ What is the patient's <strong>weight</strong>?",                 ph:"e.g. 58 kg" },
+  { f:'symptoms', q:"🩺 Describe the patient's <strong>symptoms in detail</strong>:",    ph:"e.g. High fever for 2 days, chills, body ache…" },
+];
+
+const FREE_SYSTEM = `You are CloudCare AI, a friendly dual-purpose assistant for healthcare guidance and customer support.
+HEALTHCARE: symptoms, medicines (India brands), nutrition, mental health, first aid, preventive care. Always advise consulting a doctor.
+CUSTOMER SUPPORT: order tracking, returns, refunds, account/password, billing, technical support, live agent.
+Keep responses warm, concise, use emojis. Emergency numbers in India: 112 / 108.`;
+
+/* ── UTILS ── */
+const $ = id => document.getElementById(id);
+const getTime = () => new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+function autoGrow(el){ el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,100)+'px'; }
+function handleKey(e){ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); sendMsg(); } }
+function scrollDown(){ const m=$('msgs'); setTimeout(()=>m.scrollTop=m.scrollHeight,60); }
+function enableInput(ph){ $('userInput').disabled=false; $('sendBtn').disabled=false; if(ph) $('userInput').placeholder=ph; setTimeout(()=>$('userInput').focus(),50); }
+function disableInput(){ $('userInput').disabled=true; $('sendBtn').disabled=true; }
+function showTyping(){ $('typing').classList.add('on'); scrollDown(); }
+function hideTyping(){ $('typing').classList.remove('on'); }
+
+/* ── TABS ── */
+function switchTab(t){
+  ['all','health','support'].forEach(id=>{ $('tab-'+id).classList.remove('active'); $('qa-'+id).style.display='none'; });
+  $('tab-'+t).classList.add('active'); $('qa-'+t).style.display='flex';
+}
+
+/* ── APPEND MESSAGE ── */
+function appendMsg(role, html, cls){
+  const msgs=$('msgs'), typ=$('typing');
+  const wrap=document.createElement('div');
+  wrap.className='msg '+role+(cls?' '+cls:'');
+  const bbl=document.createElement('div'); bbl.className='bbl'; bbl.innerHTML=html;
+  const tm=document.createElement('div'); tm.className='mtime'; tm.textContent=getTime();
+  wrap.appendChild(bbl); wrap.appendChild(tm);
+  msgs.insertBefore(wrap,typ); scrollDown();
+  return bbl;
+}
+
+/* ── STEP PROGRESS ── */
+function updateProgress(step){
+  const bar=$('progBar'),dots=$('progDots'),lbl=$('progLabel');
+  if(step<1||step>5){ bar.classList.remove('show'); return; }
+  bar.classList.add('show');
+  lbl.textContent='Step '+step+' of 5 · '+STEPS[step-1].f.charAt(0).toUpperCase()+STEPS[step-1].f.slice(1);
+  dots.innerHTML='';
+  for(let i=1;i<=5;i++){
+    const d=document.createElement('div');
+    d.className='prog-dot'+(i<step?' done':i===step?' active':'');
+    dots.appendChild(d);
+  }
+}
+
+/* ── PATIENT STRIP ── */
+function showPatientStrip(){
+  const s=$('ptStrip');
+  s.innerHTML='<div class="pt-chip">👤 <em>'+patient.name+'</em></div>'
+    +'<div class="pt-chip">🎂 <em>'+patient.age+' yrs</em></div>'
+    +'<div class="pt-chip">📏 <em>'+patient.height+'</em></div>'
+    +'<div class="pt-chip">⚖️ <em>'+patient.weight+'</em></div>'
+    +'<div class="pt-chip">'+patient.icon+' <em>'+patient.disease+'</em></div>';
+  s.classList.add('show');
+}
+
+/* ── PICK DISEASE ── */
+function pickDisease(name,icon){
+  patient.disease=name; patient.icon=icon;
+  $('diseaseOverlay').classList.add('gone');
+  mode='form'; formStep=1; updateProgress(1);
+  appendMsg('bot',icon+' You selected <strong>'+name+'</strong>. Let me collect the patient\'s details.<br><br>'+STEPS[0].q,'system');
+  enableInput(STEPS[0].ph);
+}
+
+/* ── SKIP TO CHAT ── */
+function skipToChat(){
+  $('diseaseOverlay').classList.add('gone');
+  mode='free'; convHistory=[];
+  appendMsg('bot','Hello! 👋 I\'m your <strong>CloudCare AI</strong> assistant. I can help with:<br><ul><li>🩺 Health symptoms &amp; guidance</li><li>💊 Medicine &amp; dosage info</li><li>🥗 Nutrition &amp; wellness</li><li>📦 Order tracking &amp; returns</li><li>💳 Account, billing &amp; support</li></ul>How can I assist you today?','system');
+  enableInput('Ask about health, orders, billing…');
+}
+
+/* ── SEND ── */
+function sendMsg(){
+  const inp=$('userInput');
+  const text=inp.value.trim();
+  if(!text) return;
+  inp.value=''; inp.style.height='auto';
+  appendMsg('user',text);
+
+  if(mode==='form'){
+    patient[STEPS[formStep-1].f]=text;
+    if(formStep<5){
+      formStep++; updateProgress(formStep);
+      const next=STEPS[formStep-1];
+      setTimeout(function(){ appendMsg('bot','✅ Got it!<br><br>'+next.q,'system'); enableInput(next.ph); },320);
+    } else {
+      formStep=0; mode='diagnosis'; updateProgress(0);
+      showPatientStrip(); disableInput(); runDiagnosis();
+    }
+  } else if(mode==='free'){
+    disableInput();
+    convHistory.push({role:'user',content:text});
+    runFreeChat();
+  }
+}
+
+/* ── QUICK ASK ── */
+function ask(text){
+  if(mode==='overlay') skipToChat();
+  $('userInput').value=text; sendMsg();
+}
+
+/* ══════════════════════════════════════
+   AI CALL — FIXED & CLEAN
+   No backticks, no duplicate lines
+══════════════════════════════════════ */
+async function callAI(messages, system){
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': API_KEY,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1000,
+      system: system,
+      messages: messages
+    })
+  });
+  const data = await response.json();
+  if (data.error) {
+    console.error('Anthropic API Error:', data.error.type, '-', data.error.message);
+    throw new Error(data.error.message);
+  }
+  return data.content[0].text;
+}
+
+/* ── FREE CHAT ── */
+async function runFreeChat(){
+  showTyping();
+  try {
+    const reply = await callAI(convHistory, FREE_SYSTEM);
+    convHistory.push({role:'assistant',content:reply});
+    hideTyping();
+    const lastQ = convHistory[convHistory.length-2].content;
+    const isHealth = /symptom|fever|cough|cold|pain|medicine|drug|health|diet|blood|mental|sleep|malaria|cancer|headache|vitamin|vaccine|doctor|hospital/i.test(lastQ);
+    appendMsg('bot', fmt(reply), isHealth ? 'health' : '');
+  } catch(e) {
+    hideTyping();
+    appendMsg('bot','⚠️ Could not reach AI. Check your internet connection and try again.','warn');
+  }
+  enableInput('Ask about health, orders, billing…');
+}
+
+/* ── DIAGNOSIS ── */
+async function runDiagnosis(){
+  showTyping();
+  const sys = 'You are CloudCare AI, a medical diagnosis assistant.\n'
+    + 'Analyse the patient data and respond EXACTLY in this format:\n\n'
+    + '**DIAGNOSIS RESULT**\n'
+    + '🔍 Predicted Condition: [one of: Fever / Cough / Nose Cold / Headache / Malaria / Cancer]\n'
+    + '📊 Confidence: [High / Medium / Low] — [brief reason]\n'
+    + '⚠️ Severity: [Mild / Moderate / Severe]\n\n'
+    + '**WHY THIS DIAGNOSIS:**\n'
+    + '[2-3 sentences linking age, weight, height and symptoms]\n\n'
+    + '**KEY SYMPTOMS DETECTED:**\n'
+    + '• [symptom]\n• [symptom]\n• [symptom]\n\n'
+    + '**RECOMMENDATIONS:**\n'
+    + '• [action]\n• [action]\n• [action]\n\n'
+    + '⚕️ Always consult a qualified doctor for official diagnosis and treatment.';
+
+  const userMsg = 'Patient: '+patient.name+', Age: '+patient.age+', Height: '+patient.height+', Weight: '+patient.weight+'\nSelected condition: '+patient.disease+'\nSymptoms: '+patient.symptoms+'\nProvide a detailed diagnosis.';
+
+  try {
+    const reply = await callAI([{role:'user',content:userMsg}], sys);
+    hideTyping();
+    const bbl = appendMsg('bot', fmt(reply), 'result');
+    const hr = document.createElement('div');
+    hr.style.cssText='margin-top:12px;padding-top:10px;border-top:1px solid rgba(37,99,235,0.15);font-size:0.79rem;color:#475569';
+    hr.innerHTML='💊 <strong style="color:#0f172a">Would you like medicine recommendations?</strong>';
+    const row=document.createElement('div'); row.className='choice-row';
+    const yes=document.createElement('button'); yes.className='cho y'; yes.textContent='✅ Yes, show medicines';
+    const no=document.createElement('button');  no.className='cho n';  no.textContent='❌ No thanks';
+    yes.onclick=function(){ row.remove(); runMedicines(); };
+    no.onclick=function(){ row.remove(); appendMsg('bot','Okay, '+patient.name+'! Rest well, stay hydrated and visit a doctor if symptoms worsen. Take care! 💚','system'); showRestartBtns(); };
+    row.appendChild(yes); row.appendChild(no);
+    hr.appendChild(row); bbl.appendChild(hr); scrollDown();
+  } catch(e) {
+    hideTyping();
+    appendMsg('bot','⚠️ Could not reach AI. Check your connection and try again.','warn');
+    showRestartBtns();
+  }
+}
+
+/* ── MEDICINES ── */
+async function runMedicines(){
+  showTyping(); disableInput();
+  const sys = 'You are CloudCare AI, a medication guidance assistant for India.\n'
+    + 'Respond EXACTLY in this format:\n\n'
+    + '**MEDICINE RECOMMENDATIONS**\n'
+    + 'For: '+patient.disease+' | Patient: '+patient.name+', Age '+patient.age+'\n\n'
+    + '💊 1. [Generic name] ([Indian brand name])\n'
+    + '   • Use: [what it treats]\n   • Dosage: [adult dosage]\n   • Note: [key precaution]\n\n'
+    + '💊 2. [Generic name] ([Indian brand name])\n'
+    + '   • Use: [what it treats]\n   • Dosage: [adult dosage]\n   • Note: [key precaution]\n\n'
+    + '💊 3. [Generic name] ([Indian brand name])\n'
+    + '   • Use: [what it treats]\n   • Dosage: [adult dosage]\n   • Note: [key precaution]\n\n'
+    + '🏠 HOME REMEDIES:\n• [remedy 1]\n• [remedy 2]\n• [remedy 3]\n\n'
+    + '⚠️ Always consult a pharmacist or doctor before taking any medicine.';
+
+  try {
+    const reply = await callAI([{role:'user',content:'Condition: '+patient.disease+', Age: '+patient.age+', Symptoms: '+patient.symptoms}], sys);
+    hideTyping();
+    appendMsg('bot', fmt(reply), 'medicine');
+    appendMsg('bot','That covers everything for <strong>'+patient.name+'</strong>! 💚<br><br>Always verify with a doctor or pharmacist before taking any medication. Stay healthy! 🌿','system');
+    showRestartBtns();
+  } catch(e) {
+    hideTyping();
+    appendMsg('bot','⚠️ Could not fetch medicine data. Please try again.','warn');
+    showRestartBtns();
+  }
+}
+
+/* ── RESTART ── */
+function showRestartBtns(){
+  const ba=$('botActions'); ba.innerHTML='';
+  const b1=document.createElement('button'); b1.className='ba-btn prime'; b1.innerHTML='🔄 New Diagnosis'; b1.onclick=restart;
+  const b2=document.createElement('button'); b2.className='ba-btn'; b2.innerHTML='💬 General Chat'; b2.onclick=goFreeChat;
+  ba.appendChild(b1); ba.appendChild(b2); ba.classList.add('show');
+}
+function goFreeChat(){
+  $('botActions').classList.remove('show'); $('ptStrip').classList.remove('show');
+  mode='free'; convHistory=[];
+  appendMsg('bot','Back to general chat! Ask me anything about health or support. 😊','system');
+  enableInput('Ask about health, orders, billing…');
+}
+function restart(){
+  patient={name:'',age:'',height:'',weight:'',symptoms:'',disease:'',icon:''};
+  convHistory=[]; mode='overlay'; formStep=0;
+  $('msgs').innerHTML='<div class="typing" id="typing"><div class="t-inner"><div class="td"></div><div class="td"></div><div class="td"></div></div></div>';
+  $('ptStrip').className='pt-strip'; $('ptStrip').innerHTML='';
+  $('progBar').classList.remove('show');
+  $('botActions').classList.remove('show'); $('botActions').innerHTML='';
+  $('diseaseOverlay').classList.remove('gone');
+  disableInput(); switchTab('all');
+}
+
+/* ══════════════════════════════════════
+   FORMAT AI TEXT — FIXED
+   Bullet points now work correctly
+══════════════════════════════════════ */
+function fmt(t){
+  // Bold & italic
+  t = t.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>');
+  t = t.replace(/\*(.*?)\*/g,'<em>$1</em>');
+  // Medicine lines
+  t = t.replace(/^(💊 \d+\..*)$/gm,'<span style="color:#7c3aed;font-weight:600;display:block;margin-top:8px">$1</span>');
+  // Home remedies header
+  t = t.replace(/^(🏠 HOME REMEDIES:?)$/gm,'<strong style="color:#059669;display:block;margin-top:10px">$1</strong>');
+  // Warning/disclaimer lines
+  t = t.replace(/^(⚠️.*)$/gm,'<span style="color:#d97706;font-size:0.78rem;display:block;margin-top:6px">$1</span>');
+  t = t.replace(/^(⚕️.*)$/gm,'<span style="color:#dc2626;font-size:0.75rem;display:block;margin-top:8px">$1</span>');
+  // Convert bullet points to <li>
+  t = t.replace(/^• (.+)$/gm,'<li>$1</li>');
+  // Wrap consecutive <li> items in <ul>
+  t = t.replace(/(<li>.*<\/li>\n?)+/g, function(m){ return '<ul>'+m+'</ul>'; });
+  // Line breaks
+  t = t.replace(/\n\n/g,'<br><br>');
+  t = t.replace(/\n/g,'<br>');
+  return t;
+}
+</script>
+</body>
+</html>
